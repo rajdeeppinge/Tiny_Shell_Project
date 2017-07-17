@@ -204,12 +204,12 @@ void eval(char *cmdline)
     	
 	if(sigaddset(&psSet, SIGCHLD) < 0) {		// adding SIGCHLD signal to the signal set
 	    //returns -1 for error else returs 0
-            unix_error("Error in performing sigaddset function\n");
+        unix_error("Error in performing sigaddset function\n");
 	}
 
 	if(sigprocmask(SIG_BLOCK, &psSet, NULL) < 0) {	//Blocking the signal set which contains SIGCHLD signal
 	    //returns -1 for error else returs 0
-            unix_error("Error in performing sigprocmask function\n");
+        unix_error("Error in performing sigprocmask function\n");
 	}
 
 	if( (pid = fork()) < 0 ) {	//create new child process by performing fork
@@ -258,9 +258,9 @@ void eval(char *cmdline)
 	    
 	    //unblock the SIGCHLD signal
 	    if(sigprocmask(SIG_UNBLOCK, &psSet, NULL) < 0) {
-                //returns -1 for error else returs 0
-                unix_error("Error in performing sigprocmask function\n");
-            }
+            //returns -1 for error else returs 0
+            unix_error("Error in performing sigprocmask function\n");
+        }
 
 	    waitfg(pid);				//wait till the job is in foreground
 	}
@@ -271,9 +271,9 @@ void eval(char *cmdline)
 
             //unblock the SIGCHLD signal
 	    if(sigprocmask(SIG_UNBLOCK, &psSet, NULL) < 0) {
-                //returns -1 for error else returs 0
-                unix_error("Error in performing sigprocmask function\n");
-            }
+            //returns -1 for error else returs 0
+            unix_error("Error in performing sigprocmask function\n");
+        }
 
 	    printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);		//print the status of job in the given format
 	}
@@ -410,98 +410,93 @@ void do_bgfg(char **argv)
 
     /* handling the case when second argument is absent */
     if(argv[1] == NULL) {
-        if(!bg)
-	    printf("fg command requires PID or %%jobid argument\n");
-	else 
-	    printf("bg command requires PID or %%jobid argument\n");
+		printf("%s command requires PID or %%jobid argument\n", argv[0]);
     }
 	
     /* handling the case when second argument is incorrect */
     else if( argv[1][0] != '%' && (atoi(argv[1]) == 0) ) {
-	if(!bg)
-	    printf("fg: argument must be a PID or %%jobid\n"); 
-    	else
-	    printf("bg: argument must be a PID or %%jobid\n");
+    	printf("%s: argument must be a PID or %%jobid\n", argv[0]);
     }
 
     /* handling the case when second argument is a possible pid */
     else if(atoi(argv[1]) != 0) {
         pid = atoi(argv[1]);			//getting the pid
 
-	/* if it is not a valid pid */
+		/* if it is not a valid pid */
         if( (job = getjobpid(jobs, pid)) == NULL)	//here we get an instance of job
             printf("(%d): No such process\n", pid);
 
-	/* if job is in background */
-	else if(bg) {
-            if(job->state == ST) {                      //if job is stopped, send a SIGCONT signal and change its state appropriately
-                job->state = BG;
-                printf("[%d] (%d) %s", pid2jid(pid), pid, job->cmdline);
-                
-		if(kill(-pid, SIGCONT) < 0) {
-            	    // if it fails to send a signal returns -1
-            	    unix_error("kill system call failed to send signal\n");
-        	}
-            }
-        }
+		/* if job is in background */
+		else if(bg) {
+		    if(job->state == ST) {                      //if job is stopped, send a SIGCONT signal and change its state appropriately
+		        job->state = BG;
+		        printf("[%d] (%d) %s", pid2jid(pid), pid, job->cmdline);
+		        
+				if(kill(-pid, SIGCONT) < 0) {
+		    	    // if it fails to send a signal returns -1
+		    	    unix_error("kill system call failed to send signal\n");
+				}
+		    }
+		}
 
-	/* if job is in foreground */
-        else {
-	    if(job->state == ST) {		//if job is stopped send a SIGCONT signal and wait till it is in the forground
-	        job->state = FG;
+		/* if job is in foreground */
+		else {
+			if(job->state == ST) {		//if job is stopped send a SIGCONT signal and wait till it is in the forground
+			    job->state = FG;
 
-		if(kill(-pid, SIGCONT) < 0) {
-                    // if it fails to send a signal returns -1
-                    unix_error("kill system call failed to send signal\n");
-                }
+				if(kill(-pid, SIGCONT) < 0) {
+	                // if it fails to send a signal returns -1
+	                unix_error("kill system call failed to send signal\n");
+	            }
 
-		waitfg(pid);
-	    }
-	    else if(job->state == BG) {		//if job is in background, bring it in foreground and wait till it is in foreground
-	        job->state = FG;
-	        waitfg(pid);
-	    }
-	}
+				waitfg(pid);
+			}
+			else if(job->state == BG) {		//if job is in background, bring it in foreground and wait till it is in foreground
+			    job->state = FG;
+			    waitfg(pid);
+			}
+		}
     }
 
     /* handling the case when second argument is a possible job id */
     else if(argv[1][0] == '%') {
         jid = atoi(strcpy(argv[1], argv[1]+1));	//getting the job id
 
-	/* if the job id is not present */
+		/* if the job id is not present */
         if( (job = getjobjid(jobs, jid)) == NULL)
             printf("%%%d: No such job\n", jid);
 
-	/* if the job is in the background */
-	else if (bg) {
-            if(job->state == ST) {              //if job is stopped, send a SIGCONT signal and change its state appropriately
-                job->state = BG;
-                printf("[%d] (%d) %s", jid, job->pid, job->cmdline);
+		/* if the job is in the background */
+		else if (bg) {
+	        if(job->state == ST) {              //if job is stopped, send a SIGCONT signal and change its state appropriately
+	            job->state = BG;
+	            printf("[%d] (%d) %s", jid, job->pid, job->cmdline);
 
-		if(kill(-1, SIGCONT) < 0) {
-                    // if it fails to send a signal returns -1
-                    unix_error("kill system call failed to send signal\n");
-                }
-            }
-        }
+				if(kill(-1, SIGCONT) < 0) {
+	                // if it fails to send a signal returns -1
+	                unix_error("kill system call failed to send signal\n");
+	            }
+	        }
+	    }
 
-	/* if the job is in the foreground */
-	else {
-            if(job->state == ST) {		//if job is stopped send a SIGCONT signal and wait till it is in the forground
-                job->state = FG;
+		/* if the job is in the foreground */
+		else {
+	        if(job->state == ST) {		//if job is stopped send a SIGCONT signal and wait till it is in the forground
+	            job->state = FG;
 
-		if(kill(-1, SIGCONT) < 0) {
-                    // if it fails to send a signal returns -1
-                    unix_error("kill system call failed to send signal\n");
-                }
+				if(kill(-1, SIGCONT) < 0) {
+		            // if it fails to send a signal returns -1
+		            unix_error("kill system call failed to send signal\n");
+		        }
 
-                waitfg(job->pid);
-            }
-            else if(job->state == BG) {		//if job is in background, bring it in foreground and wait till it is in foreground
-                job->state = FG;
-                waitfg(job->pid);
-            }
-        }
+	            waitfg(job->pid);
+	        }
+
+	        else if(job->state == BG) {		//if job is in background, bring it in foreground and wait till it is in foreground
+	            job->state = FG;
+	            waitfg(job->pid);
+	        }
+	    }
     }
 
     return;
